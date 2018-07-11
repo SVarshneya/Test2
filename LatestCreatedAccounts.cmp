@@ -1,0 +1,16 @@
+<aura:component controller="AccountController" >
+    <aura:attribute name="acclist" type="account[]"/>
+    <aura:handler name="init" value="{!this}" action="{!c.myAction}" /> 
+    
+    <table class="slds-table">
+        <th scope="col">Id</th>
+        <th scope="col">Name</th>
+        
+        <aura:iteration items="{!v.acclist}" var="acc">
+        	<tr >
+            	<td>{!acc.Id}</td>
+            	<td>{!acc.Name}</td> 
+            </tr>
+        </aura:iteration>
+    </table>
+</aura:component>

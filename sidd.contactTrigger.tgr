@@ -1,0 +1,82 @@
+trigger contactTrigger on Contact (after insert, after update, after delete) {
+    map<Id,list<contact>> mapAcc = new map<Id,list<contact>>();
+    if(Trigger.isInsert){
+        for(contact con : trigger.New){
+           if(con.accountId != null){
+               if(!mapAcc.containsKey(con.accountId)){
+                   mapAcc.put(con.accountId,new list<Contact>());
+               }
+               mapAcc.get(con.accountId).add(con);
+           }
+        }
+        
+        list<account> lstAcc = [SELECT id, sidd__Number_of_Contacts__c from account where Id IN: mapAcc.keySet()];
+    
+        for(Account acc : lstAcc){
+            if(acc.sidd__Number_of_Contacts__c == null){
+                acc.sidd__Number_of_Contacts__c = 0;
+            }
+            acc.sidd__Number_of_Contacts__c += mapAcc.get(acc.Id).size();
+        }
+        
+        update lstAcc;
+    }
+    if(Trigger.isUpdate){
+        map<Id,list<contact>> mapAccDelete = new map<Id,list<contact>>();
+        for(contact con : Trigger.New){
+           if(con.accountId != null && con.accountId != Trigger.OldMap.get(con.Id).accountId){
+               if(!mapAcc.containsKey(con.accountId)){
+                   mapAcc.put(con.accountId,new list<Contact>());
+               }
+               mapAcc.get(con.accountId).add(con);
+               if(trigger.oldMap.get(con.Id).accountId != null){
+                   if(!mapAccDelete.containsKey(trigger.oldMap.get(con.Id).accountId)){
+                       mapAccDelete.put(trigger.oldMap.get(con.Id).accountId,new list<Contact>());
+                   }
+                   mapAccDelete.get(trigger.oldMap.get(con.Id).accountId).add(con);
+               }
+           }
+           else if(con.accountId == null && con.accountId != trigger.oldMap.get(con.Id).accountId){
+               if(!mapAccDelete.containsKey(trigger.oldMap.get(con.Id).accountId)){
+                   mapAccDelete.put(trigger.oldMap.get(con.Id).accountId,new list<Contact>());
+               }
+               mapAccDelete.get(trigger.oldMap.get(con.Id).accountId).add(con);
+           }
+        }
+        list<account> lstAcc = [SELECT id, sidd__Number_of_Contacts__c from account where Id IN: mapAcc.keySet() OR Id IN : mapAccDelete.keySet()];
+        for(Account acc : lstAcc){
+            if(acc.sidd__Number_of_Contacts__c == null){
+                acc.sidd__Number_of_Contacts__c = 0;
+            }
+            if(mapAcc.containsKey(acc.Id)){
+                acc.sidd__Number_of_Contacts__c += mapAcc.get(acc.Id).size();
+            }
+            if(mapAccDelete.containsKey(acc.Id)){
+                acc.sidd__Number_of_Contacts__c -= mapAccDelete.get(acc.Id).size();
+            }
+        }
+        
+        update lstAcc; 
+    }
+    if(Trigger.isDelete){
+        for(contact con : trigger.Old){
+           if(con.accountId != null){
+               if(!mapAcc.containsKey(con.accountId)){
+                   mapAcc.put(con.accountId,new list<Contact>());
+               }
+               mapAcc.get(con.accountId).add(con);
+           }
+        }
+        
+        list<account> lstAcc = [SELECT id, sidd__Number_of_Contacts__c from account where Id IN: mapAcc.keySet()];
+    
+        for(Account acc : lstAcc){
+            if(acc.sidd__Number_of_Contacts__c == null){
+                acc.sidd__Number_of_Contacts__c = 0;
+            }
+            acc.sidd__Number_of_Contacts__c -= mapAcc.get(acc.Id).size();
+        }
+        
+        update lstAcc;
+    }
+}
